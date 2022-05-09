@@ -1,0 +1,97 @@
+ingress:
+  enabled: true
+  # Used to create an Ingress record.
+  hosts:
+    - name: sonarqube.champiat.lan
+      # Different clouds or configurations might need /* as the default path
+      path: /
+      # For additional control over serviceName and servicePort
+      # serviceName: someService
+      # servicePort: somePort
+
+  tls:
+    - secretName : sonarqube-tls
+      hosts:
+        - sonarqube.champiat.lan
+
+
+nodeSelector:
+  kubernetes.io/arch: amd64
+
+
+## Provide a secret containing one or more certificate files in the keys that will be added to cacerts
+## The cacerts file will be set via SONARQUBE_WEB_JVM_OPTS and SONAR_CE_JAVAOPTS
+##
+caCerts:
+  enabled: true
+  secret: web-ca
+
+
+persistence:
+  enabled: true
+  storageClass: freenas-nfs-csi
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  uid: 1000
+
+
+## Configuration values for postgresql dependency
+## ref: https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
+postgresql:
+  # Enable to deploy the PostgreSQL chart
+  enabled: true
+  image:
+    repository: postgres
+    tag: 14.1
+  postgresqlUsername: "sonarUser"
+  postgresqlPassword: "sonarPass"
+  postgresqlDatabase: "sonarDB"
+
+  primary:
+    nodeSelector:
+      kubernetes.io/arch: amd64
+  readinessProbe:
+    initialDelaySeconds: 1000
+
+  livenessProbe:
+    initialDelaySeconds: 1000
+  # Specify the TCP port that PostgreSQL should use
+  service:
+    port: 5432
+  resources:
+    limits:
+      cpu: 2
+      memory: 2Gi
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 20Gi
+    storageClass: freenas-nfs-csi
+  securityContext:
+    # For standard Kubernetes deployment, set enabled=true
+    # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
+    enabled: true
+    # fsGroup specification below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
+    # postgresql dockerfile sets user as 1001
+    fsGroup: 1001
+  containerSecurityContext:
+    # For standard Kubernetes deployment, set enabled=true
+    # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
+    enabled: true
+    # runAsUser specification below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
+    # postgresql dockerfile sets user as 1001
+    runAsUser: 1001
+  volumePermissions:
+    # For standard Kubernetes deployment, set enabled=false
+    # For OpenShift, set enabled=true and ensure to set volumepermissions.securitycontext.runAsUser below.
+    enabled: false
+    # if using restricted SCC set runAsUser: "auto" and if running under anyuid/nonroot SCC - runAsUser needs to match runAsUser above
+    securityContext:
+      runAsUser: 0
+  shmVolume:
+    chmod:
+      enabled: false
+  serviceAccount:
+    ## If enabled = true, and name is not set, postgreSQL will create a serviceAccount
+    enabled: false
+    # name:

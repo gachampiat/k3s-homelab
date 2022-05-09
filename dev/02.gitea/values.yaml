@@ -1,0 +1,159 @@
+replicaCount: 1
+
+image:
+  repository: gitea/gitea
+  tag: 1.15.10
+  rootless: true # only possible when running 1.14 or later
+
+
+ingress:
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  tls:
+    - secretName: git-tls
+      hosts: 
+        - git.champiat.lan
+  hosts:
+    - host: git.champiat.lan
+      paths:
+        - path: /
+          pathType: Prefix
+
+
+nodeSelector:
+  kubernetes.io/arch: amd64
+
+persistence:
+  enabled: true
+  size: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClass: freenas-nfs-csi
+ 
+extraVolumes:
+  - name: pki
+    persistentVolumeClaim:
+      claimName: pki
+
+extraVolumeMounts:
+  - name: pki
+    readOnly: true
+    mountPath: "/etc/ssl/certs/web_bundles.crt"
+    subPath: web_bundles.crt
+
+memcached:
+  arguments: []
+  image:
+    repository: memcached
+    tag: 1.6.14
+
+gitea:
+  admin:
+      existingSecret: gitea-admin-secret
+  additionalConfigSources:
+      - configMap:
+          name: gitea-config
+      - secret:
+          secretName: gitea-ini-config
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+
+
+mysql:
+  enabled: false
+
+postgresql:
+  enabled: false
+
+mariadb:
+  enabled: true
+  architecture: standalone
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1000
+  ## MariaDB primary container security context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  ## @param primary.containerSecurityContext.enabled MariaDB primary container securityContext
+  ## @param primary.containerSecurityContext.runAsUser User ID for the MariaDB primary container
+  ## @param primary.containerSecurityContext.runAsNonRoot Set Controller container's Security Context runAsNonRoot
+  ##
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1000
+    runAsNonRoot: true
+    
+  auth:
+    database: gitea
+    username: gitea
+    replicationUser: replicator
+    existingSecret: mariadb-gitea-auth
+    forcePassword: true
+
+
+  primary:
+    nodeSelector:
+      kubernetes.io/arch: amd64
+
+    persistence:
+      enabled: true
+      storageClass: freenas-nfs-csi
+      accessModes:
+        - ReadWriteOnce
+      size: 50Gi
+    
+    
+    readinessProbe:
+      initialDelaySeconds: 120
+
+    livenessProbe:
+      initialDelaySeconds: 120
+
+  metrics:
+    ## @param metrics.enabled Start a side-car prometheus exporter
+    ##
+    enabled: true
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 120
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 30
+
+    serviceMonitor:
+      ## @param metrics.serviceMonitor.enabled Create ServiceMonitor Resource for scraping metrics using PrometheusOperator
+      ##
+      enabled: true
+      namespace: dev
+      additionalLabels:
+        release: kube-prometheus-stack
+
+    prometheusRule:
+      ## @param metrics.prometheusRule.enabled if `true`, creates a Prometheus Operator PrometheusRule (also requires `metrics.enabled` to be `true` and `metrics.prometheusRule.rules`)
+      ##
+      enabled: true
+      ## @param metrics.prometheusRule.namespace Namespace for the PrometheusRule Resource (defaults to the Release Namespace)
+      ##
+      namespace: dev
+      ## @param metrics.prometheusRule.additionalLabels Additional labels that can be used so PrometheusRule will be discovered by Prometheus
+      ##
+      additionalLabels:
+        release: kube-prometheus-stack
+
+      ## @param metrics.prometheusRule.rules Prometheus Rule definitions
+      ##
+      rules:
+      - alert: Gitea-DB-Down
+        expr: absent(up{job="gitea-mariadb"} == 1)
+        for: 5m
+        labels:
+          severity: warning
+          service: giteadb
+        annotations:
+          message: "It seems that the gitea's database instance is down"
+          summary: "It seems that the gitea's database instance is down"

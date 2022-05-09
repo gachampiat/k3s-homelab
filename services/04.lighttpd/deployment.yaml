@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lighttpd-deployment
+  namespace: services
+  labels:
+    app: lighttpd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lighttpd
+  template:
+    metadata:
+      namespace: services
+      labels:
+        app: lighttpd
+    spec:
+      containers:
+      - name: lighttpd
+        image: sebp/lighttpd:1.4.61-r1
+        livenessProbe:
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 80
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: configuration
+          mountPath: /etc/lighttpd
+        - name: index
+          mountPath: /var/www/localhost/htdocs/
+        - name: pki
+          mountPath: /var/www/localhost/htdocs/pki
+        - name: images
+          mountPath: /var/www/localhost/htdocs/images
+        - name: models
+          mountPath: /var/www/localhost/htdocs/models
+      volumes:
+      - name: configuration
+        configMap:
+          name: lighttpd-configuration
+      - name: index
+        configMap:
+          name: lighttpd-index
+      - name: pki
+        persistentVolumeClaim:
+          claimName: pki
+      - name: images
+        persistentVolumeClaim:
+          claimName: sentio-images
+      - name: models
+        persistentVolumeClaim:
+          claimName: sentio-models
+

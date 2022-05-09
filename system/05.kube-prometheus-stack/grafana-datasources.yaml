@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource
+  namespace: system
+  labels:
+    grafana_datasource: '1'
+data:
+  datasource.yaml: |
+    apiVersion: 1       
+    datasources:
+        # <string, required> name of the datasource. Required
+      - name: Prometheus
+        # <string, required> datasource type. Required
+        type: prometheus
+        # <string, required> access mode. proxy or direct (Server or Browser in the UI). Required
+        access: proxy
+        isDefault: true
+        orgId: 1
+        # <string> url
+        url: http://kube-prometheus-stack-prometheus.system:9090/
+        # <map> fields that will be converted to json and stored in json_data
+        jsonData:
+          timeInterval: 30s
+          tlsAuthWithCACert: true
+        secureJsonData:
+          tlsCACert: | 
+            -----BEGIN CERTIFICATE-----
+            MIIFkDCCA3igAwIBAgIUThhajqaUt2EV+dZyjiX8BeF14MAwDQYJKoZIhvcNAQENBQAwYDELMAkGA1UEBhMCRlIxGTAXBgNVBAcTEENsZXJtb250LUZlcnJhbmQxETAPBgNVBAoTCENoYW1waWF0MQwwCgYDVQQLEwNQS0kxFTATBgNVBAMTDENoYW1waWF0IFBLSTAeFw0yMjAxMTcxMjM1MDBaFw0yNzAxMTYxMjM1MDBaMGAxCzAJBgNVBAYTAkZSMRkwFwYDVQQHExBDbGVybW9udC1GZXJyYW5kMREwDwYDVQQKEwhDaGFtcGlhdDEMMAoGA1UECxMDUEtJMRUwEwYDVQQDEwxDaGFtcGlhdCBQS0kwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDTgfy6MJ21x8imqYZlH9uU4jYrcT2ZPGsL5v9afenTnkcJB8qRi37NKmjGYQzHNHiKkguAhp7RN8Cb+I2ZyYn3zKJM0XrrPF2jE8beX2Z5+6faLHl409W01B3zfCNw/A5oVf+5v7F9uIs3bRfxkMZck5Cc4CMwKHBZN5BGuNJATkhmBaUljKMHJwV5C9QyAtMqEwv5kGf3GxwQblSPUhmHLIfk5yfSv4cGqb6v8LDSQPbksPY3YzFn7ugYL3+Ee2B9uAso5bXMbDsJT4RlR2r0gujBrPsvHstsWTmkicOwTvwUjvylyMO1EsrDuNtUGkjjp8LlPYlblO+Dbh35DrcFHIRMygMF2ZWWua0Qj1K0zcIzYKmujszA+DcC0ZNDoWLeQaNJ8nH6JAnxCjiwYG1Oi/w4wDIkR290zI9S1i7BE2FAxhZ0dv0SNZQa6UbM4eMvHpRn+gNovDbW2FzLyJejmHoeszlVt41iozeQTVvLWoKsqCMyHuGjSwcJSGTjtv+ehDN4g3olz8gm/RD7xErzzvAeojRn76emFcFV8hc0GiiPRWrK6AZZ1AGuIoKzwVaVMUjf3IbfAZt9rSjffFTUzsxOpeXfDCZ+vtGZGMESQkJoWxdEJYWgbodKayMZMKdRzQcqTK3Eoi5K2z4O9SIxcr7+5BDYQa+mW6u4oGo1YwIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUBxX5Ie5nGhC2byo4bL6d295QaLYwDQYJKoZIhvcNAQENBQADggIBAL7rOQpMoPtIHRBhRYY4bNXaFRjcPO6LgctGjqIWdkUg7JxqTH/yw+tYQPHho4VHNW/q6V1WQsXkOpcs51nTqW4XIoguw42PthNIl7lFZiNhOaXsv/72VWU8YsGYSPTIe5j8O1DSidxPIpLRnRIfQy8CESrRx7wamCBTOAQc28rke7T9QclrZWOjhmluAhVy8U0rXSX5ymvm2c90az5yx8+Xs9Gp+i6uWTI9q39Q1lN36dVT5oi7tDpS59302MxEKf8Qcq+IWoUOJXZT9FUsC1BSWzRXtfAp+3a55n2UvBACrbaA6pNzackImvBU5nGgJKWOKdFH/ro6uWRcSCQjXfy9wOLEGPxpJ3DEXL0KesjOOYtJxAi9wU69cj3c2cQfWPhXrRZQeQXIXceQy4ehhj5n1Q5eIgI/3q5d3kGzM3zhb7Y+gWiO2nx/Y3s6WtuSP8yr8xA8hspl02hUAU8yqZ+vR6+qQqswXmrRehzjP7uZNMhTDFWefgyNBvkdRLjW+lgOkJC6SLbo1pkQVR3TJX1/NqsHIiFkYesx0rnKQa3yRLJr3PKC4fowbfm+TE3heD1472iv3bohY+aJYUMXBmxp0dIN88oA04538FQ15c0dRkLUCPSSIrgzeV/jnXAyb9j1EfAN/i1imHvw8ze8nMQ/GS/ZxTjpskAz9tRvc0bh
+            -----END CERTIFICATE-----
+            -----BEGIN CERTIFICATE----- 
+            MIIE/DCCAuSgAwIBAgIURs37PvEBG3gwrUgtjBNBA04j3+IwDQYJKoZIhvcNAQENBQAwYDELMAkGA1UEBhMCRlIxGTAXBgNVBAcTEENsZXJtb250LUZlcnJhbmQxETAPBgNVBAoTCENoYW1waWF0MQwwCgYDVQQLEwNQS0kxFTATBgNVBAMTDENoYW1waWF0IFBLSTAeFw0yMjAxMTcxMjQzMDBaFw0yMzAxMTcxMjQzMDBaMIGGMQswCQYDVQQGEwJGUjEZMBcGA1UEBxMQQ2xlcm1vbnQtRmVycmFuZDERMA8GA1UEChMIQ2hhbXBpYXQxKjAoBgNVBAsTIVdlYiBzZXJ2aWNlIGludGVybmFsIGludGVybWVkaWF0ZTEdMBsGA1UEAxMUV2ViIHNlcnZpY2UgaW50ZXJuYWwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSIVmN5hO4SfoUrzwNQjopXbmko/cSb5kIswibtfX2KYuVUPip8POTktSQ9T9Vbe7TyyPpJMVG4cc7v1ZkVDVxi2dSmSPEe3MSAsF4aH2PjZXA5w/qNdOTmhqh/fmFQha2l3BycUkT0INDgrdF76Tkca+LCbk1EhbQDLjFZyFI1r9TBF3jzDutQ7S4PJfXlLt2l4xeJ2nm3RPbVAWaxTAhn18a4IZfBQh3eHFcfOskSgMbTwA/SGiSO050u0JwySu6+uxPpdD3ZYfUDTbG9c0fMX0wM8IhKdI23y3XA0dnJCvjMnskjk0L1vMqk1Bn8GzP+3CLhYpdOTMsNRY4n5A7AgMBAAGjgYYwgYMwDgYDVR0PAQH/BAQDAgGmMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjASBgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBQ7DUb3ezo04CY2iTKoVv09l+apuzAfBgNVHSMEGDAWgBQHFfkh7mcaELZvKjhsvp3b3lBotjANBgkqhkiG9w0BAQ0FAAOCAgEAcP16hOW/53bPSrdbWcki/muIZgvIildCWbVoMgef+qwqFRj+vulTb6oW8yqsXoEtrYpmGrM3rYlZjqFWwuJffUwtlBUUwaLD6TG+LPunBZjPN5d1xBLhBjSvZKAKjp3wN4kRv1f0wXJBqGjpBkxmH96gSd7PRu7ptviyEXmgAVAmb2nR/D1UAS73O7x2t8+RGQzyB+pDxQcvHomeZZ+83U2FnPPEGl9D1r5VQI8Lyksls5Bd9WmXC2MsQWLwaa1lfoEbR8it6v8uqgsFBcPfzqs1QeiXEkifb4k+gKNRY+7Ds7RVviOX1dzVnpYzxUh1l3KyVEUy7UR90zcI2W8jYAJwhG97n8iOH+5F5M5pH9zTpDsYParb73Y/OXhpQuBUC+DFnVYmvsd1I+mV29NjZTVjwPIOmv8lnjno6foUk6SlTBZ4Feyu6u1oToo9A54LwROcylJFpNy/YhPBzaGYKgrynIuE4jdczSqVMcOfb6c/2PMMl0Qa6J7iEyvwdsLiII1BWcLP72LkE2GKPtK567woM3HDjEct5/42CWNQAsjNmcwcNe+SfMMzP5Hpm4k9tzFxGkgHBmtCX7eEspCzLvGrfIQF+drubxKa+cSRCzj/ZwabKMMipEKrbha3Y+x5gPMn714ETR+zeWXKJPX2/+tcWFKoofrujg82dJhy4wI= 
+            -----END CERTIFICATE-----
+        version: 1
+        editable: true

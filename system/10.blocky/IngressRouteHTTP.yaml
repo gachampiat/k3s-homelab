@@ -1,0 +1,50 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: blocky
+  namespace: system
+  labels:
+    app.kubernetes.io/instance: blocky
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`dns.champiat.lan`)
+    services:
+    - name: blocky
+      port: 4000
+
+  tls:
+    secretName: blocky-tls
+    certResolver: web-ca-issuer
+
+
+
+
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: blocky
+#   namespace: system
+# spec:
+#   entryPoints:
+#     - websecure
+#   routes:
+#   - kind: Rule
+#     match: Host(`dns.champiat.lan`)
+#     services:
+#     - name: blocky
+#       port: 443
+
+#   tls:
+#     secretName: blocky-tls
+#     certResolver: web-ca-issuer
+
+##########################################################################
+#
+#                 NOT WORKING BECAUSE OF TRAEFIK REDIRECTION
+#             When traefik redirect a connection it uses the IP address
+#           which is not available in the Certificate
+#
+##########################################################################

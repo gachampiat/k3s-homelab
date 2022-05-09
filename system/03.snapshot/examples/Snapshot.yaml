@@ -1,0 +1,9 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: test
+  namespace: system
+spec:
+  volumeSnapshotClassName: csi-nfs-truenas-api-snapclass
+  source:
+    persistentVolumeClaimName: test

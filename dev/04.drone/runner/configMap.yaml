@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: drone-runner
+  namespace: dev
+  labels:
+    release: drone
+data:
+  username: root
+  volumes : /usr/share/PKI/web/:/etc/docker/certs.d/core.harbor.champiat.lan/

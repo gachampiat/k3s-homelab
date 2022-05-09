@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vaultwarden
+  namespace: services
+  labels:
+    app.kubernetes.io/instance: vaultwarden
+spec:
+  dnsNames:
+    - vault.champiat.lan
+  secretName: vaultwarden-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer

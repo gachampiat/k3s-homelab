@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nextcloud
+  namespace: services
+  labels:
+    app.kubernetes.io/instance: nextcloud
+spec:
+  dnsNames:
+    - nextcloud.champiat.lan
+  secretName: nextcloud-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer

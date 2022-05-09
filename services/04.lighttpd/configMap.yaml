@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lighttpd-configuration
+  namespace: services
+data:
+  lighttpd.conf : |
+    server.document-root = "/var/www/localhost/htdocs" 
+    server.port = 80
+
+    mimetype.assign = (
+      ".html" => "text/html", 
+      ".txt" => "text/plain",
+      ".jpg" => "image/jpeg",
+      ".png" => "image/png" 
+    )
+
+    dir-listing.activate = "enable"
+  
+    index-file.names = ( "index.html" )
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lighttpd-index
+  namespace: services
+data:
+  index.html : |
+    <!doctype html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <title> Simple web server for our documents ! </title>
+    </head> 
+
+    <body>
+      <p> certificats disponible ici  : <a href="/pki"> certs </a> </p>
+    </body>

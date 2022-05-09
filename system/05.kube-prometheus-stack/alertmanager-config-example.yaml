@@ -1,0 +1,20 @@
+global:
+  resolve_timeout: 5m
+receivers:
+- name: alertmanager-bot
+  webhook_configs:
+  - send_resolved: true
+    url: 'http://alertmanager-bot:8080'
+route:
+  group_by:
+  - job
+  group_interval: 5m
+  group_wait: 30s
+  receiver: alertmanager-bot
+  repeat_interval: 12h
+  routes:
+  - match:
+      alertname: Watchdog
+    receiver: alertmanager-bot
+templates:
+- /etc/alertmanager/config/*.tmpl

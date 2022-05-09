@@ -1,0 +1,157 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: core-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  dnsNames:
+    - core.harbor.champiat.lan
+  secretName: core-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: notary-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  dnsNames:
+    - notary.harbor.champiat.lan
+  secretName: notary-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-core-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  commonName: core
+  dnsNames:
+    - core
+  secretName: internal-core-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-jobservice-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  commonName: jobservice
+  dnsNames:
+    - jobservice
+  secretName: internal-jobservice-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-registry-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  commonName: registry
+  dnsNames:
+    - registry
+  secretName: internal-registry-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-portal-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  commonName: portal
+  dnsNames:
+    - portal
+  secretName: internal-portal-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-chartmuseum-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  commonName: chartmuseum
+  dnsNames:
+    - chartmuseum
+  secretName: internal-chartmuseum-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-trivy-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  commonName: trivy-adapter
+  dnsNames:
+    - trivy-adapter
+  secretName: internal-trivy-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-token-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  commonName: core
+  dnsNames:
+    - core
+  secretName: internal-token-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-notary-signer-harbor
+  namespace: dev
+  labels:
+    release: harbor
+spec:
+  dnsNames:
+    - notary-signer
+    - notary-server
+  secretName: internal-notary-signer-harbor-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer

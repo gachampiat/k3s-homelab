@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: drone-runner
+  namespace: dev
+  labels:
+    release: drone
+  annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+    - secretName: drone-runner-tls
+  rules:
+  - host: runner.champiat.lan
+    http:
+      paths:
+      - backend:
+          service:
+            name: drone-runner
+            port:
+              number: 3000
+        path: /
+        pathType: Prefix

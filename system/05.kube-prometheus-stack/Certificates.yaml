@@ -1,0 +1,51 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  namespace: system
+  name: alertmanager
+spec:
+  dnsNames:
+    - alertmanager.champiat.lan
+  secretName: alertmanager-general-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  namespace: system
+  name: grafana
+spec:
+  dnsNames:
+    - grafana.champiat.lan
+  secretName: grafana-general-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  namespace: system
+  name: prometheus
+spec:
+  dnsNames:
+    - prometheus.champiat.lan
+  secretName: prometheus-general-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  namespace: system
+  name: prometheus-svc
+spec:
+  dnsNames:
+    - kube-prometheus-stack-prometheus.system
+  secretName: prometheus-svc-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer

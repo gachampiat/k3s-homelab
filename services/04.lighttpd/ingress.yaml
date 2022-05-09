@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lighttpd
+  namespace: services
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+    - secretName: lighttpd-tls
+  rules:
+  - host: web.champiat.lan
+    http:
+      paths:
+      - backend:
+          service:
+            name: lighttpd
+            port:
+              number: 80
+        path: /
+        pathType: Prefix

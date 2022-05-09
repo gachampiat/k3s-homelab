@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  namespace: system
+  name: blocky
+  labels:
+    app.kubernetes.io/instance: blocky
+spec:
+  dnsNames:
+    - dns.champiat.lan
+  ipAddresses:
+    - 10.42.0.23
+    - 10.42.0.28
+    - 10.42.0.29
+    - 10.42.0.30
+    - 10.42.0.31
+    - 10.42.0.32
+    - 10.42.0.33
+  secretName: blocky-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: ClusterIssuer

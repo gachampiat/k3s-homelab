@@ -1,0 +1,14 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteUDP
+metadata:
+  name: blocky-tcp
+  namespace: system
+  labels:
+    app.kubernetes.io/instance: blocky
+spec:
+  entryPoints:
+    - dns
+  routes:
+  - services:
+    - name: blocky-dns-udp
+      port: 53

@@ -1,0 +1,37 @@
+env:
+  # -- Set the container timezone
+  TZ: Europe/Paris
+# -- Configures service settings for the chart.
+# @default -- See values.yaml
+service:
+  main:
+    ports:
+      http:
+        port: 80
+
+ingress:
+  # -- Enable and configure ingress settings for the chart under this key.
+  # @default -- See values.yaml
+  main:
+    enabled: true
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    tls:
+      - secretName : heimdall-tls
+        hosts:
+          - champiat.lan
+    hosts:
+      - host: champiat.lan
+        paths:
+          - path: /
+            pathType: Prefix
+
+
+# -- Configure persistence settings for the chart under this key.
+# @default -- See values.yaml
+persistence:
+  config:
+    enabled: true
+    mountPath: "/config"
+    size: 1Gi
+    storageClass: freenas-nfs-csi

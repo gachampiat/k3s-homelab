@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sonarqube
+  namespace: dev
+spec:
+  dnsNames:
+    - sonarqube.champiat.lan
+  secretName: sonarqube-tls
+  issuerRef:
+    name: web-ca-issuer
+    kind: Issuer

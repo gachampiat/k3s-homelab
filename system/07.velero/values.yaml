@@ -1,0 +1,507 @@
+##
+## Configuration settings that directly affect the Velero deployment YAML.
+##
+
+# Details of the container image to use in the Velero deployment & daemonset (if
+# enabling restic). Required.
+image:
+  repository: velero/velero
+  tag: v1.8.0
+  # Digest value example: sha256:d238835e151cec91c6a811fe3a89a66d3231d9f64d09e5f3c49552672d271f38.
+  # If used, it will take precedence over the image.tag.
+  # digest:
+  pullPolicy: IfNotPresent
+  # One or more secrets to be used when pulling images
+  imagePullSecrets: []
+  # - registrySecretName
+
+# Annotations to add to the Velero deployment's. Optional.
+#
+# If you are using reloader use the following annotation with your VELERO_SECRET_NAME
+annotations: {}
+# secret.reloader.stakater.com/reload: "<VELERO_SECRET_NAME>"
+
+# Labels to add to the Velero deployment's. Optional.
+labels: {}
+
+# Annotations to add to the Velero deployment's pod template. Optional.
+#
+# If using kube2iam or kiam, use the following annotation with your AWS_ACCOUNT_ID
+# and VELERO_ROLE_NAME filled in:
+podAnnotations: {}
+  #  iam.amazonaws.com/role: "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<VELERO_ROLE_NAME>"
+
+# Additional pod labels for Velero deployment's template. Optional
+# ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+# Resource requests/limits to specify for the Velero deployment.
+# https://velero.io/docs/v1.6/customize-installation/#customize-resource-requests-and-limits
+resources:
+  requests:
+    cpu: 500m
+    memory: 128Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+# Configure the dnsPolicy of the Velero deployment
+# See: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+dnsPolicy: ClusterFirst
+
+# Init containers to add to the Velero deployment's pod spec. At least one plugin provider image is required.
+# If the value is a string then it is evaluated as a template.
+initContainers:
+  - name: velero-plugin-for-csi
+    image: velero/velero-plugin-for-csi:v0.2.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.3.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+# SecurityContext to use for the Velero deployment. Optional.
+# Set fsGroup for `AWS IAM Roles for Service Accounts`
+# see more informations at: https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+podSecurityContext: {}
+  # fsGroup: 1337
+
+# Container Level Security Context for the 'velero' container of the Velero deployment. Optional.
+# See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+containerSecurityContext: {}
+  # allowPrivilegeEscalation: false
+  # capabilities:
+  #   drop: ["ALL"]
+  #   add: []
+  # readOnlyRootFilesystem: true
+
+# Pod priority class name to use for the Velero deployment. Optional.
+priorityClassName: ""
+
+# Tolerations to use for the Velero deployment. Optional.
+tolerations: []
+
+# Affinity to use for the Velero deployment. Optional.
+affinity: {}
+
+# Node selector to use for the Velero deployment. Optional.
+nodeSelector:
+  kubernetes.io/arch: amd64
+
+# Extra volumes for the Velero deployment. Optional.
+extraVolumes: []
+
+# Extra volumeMounts for the Velero deployment. Optional.
+extraVolumeMounts: []
+
+# Settings for Velero's prometheus metrics. Enabled by default.
+metrics:
+  enabled: true
+  scrapeInterval: 30s
+  scrapeTimeout: 10s
+
+  # service metdata if metrics are enabled
+  service:
+    annotations: {}
+    labels: {}
+
+  # Pod annotations for Prometheus
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8085"
+    prometheus.io/path: "/metrics"
+
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: kube-prometheus-stack
+    # ServiceMonitor namespace. Default to Velero namespace.
+    # namespace:
+
+kubectl:
+  image:
+    repository: docker.io/bitnami/kubectl
+    # Digest value example: sha256:d238835e151cec91c6a811fe3a89a66d3231d9f64d09e5f3c49552672d271f38.
+    # If used, it will take precedence over the kubectl.image.tag.
+    # digest:
+    # kubectl image tag. If used, it will take precedence over the cluster Kubernetes version.
+    # tag: 1.16.15
+  # Container Level Security Context for the 'kubectl' container of the crd jobs. Optional.
+  # See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  containerSecurityContext: {}
+  # Resource requests/limits to specify for the upgrade/cleanup job. Optional
+  resources: {}
+  # Annotations to set for the upgrade/cleanup job. Optional.
+  annotations: {}
+  # Labels to set for the upgrade/cleanup job. Optional.
+  labels: {}
+
+  nodeSelector:
+    kubernetes.io/arch: amd64
+
+# This job upgrades the CRDs.
+upgradeCRDs: true
+
+# This job is meant primarily for cleaning up CRDs on CI systems.
+# Using this on production systems, especially those that have multiple releases of Velero, will be destructive.
+cleanUpCRDs: false
+
+##
+## End of deployment-related settings.
+##
+
+
+##
+## Parameters for the `default` BackupStorageLocation and VolumeSnapshotLocation,
+## and additional server settings.
+##
+configuration:
+  # Cloud provider being used (e.g. aws, azure, gcp).
+  provider: aws
+
+  # Parameters for the `default` BackupStorageLocation. See
+  # https://velero.io/docs/v1.6/api-types/backupstoragelocation/
+  backupStorageLocation:
+    # name is the name of the backup storage location where backups should be stored. If a name is not provided,
+    # a backup storage location will be created with the name "default". Optional.
+    name: csi-backup
+    # provider is the name for the backup storage location provider. If omitted
+    # `configuration.provider` will be used instead.
+    provider: aws
+    # bucket is the name of the bucket to store backups in. Required.
+    bucket: velero
+    # caCert defines a base64 encoded CA bundle to use when verifying TLS connections to the provider. Optional.
+    caCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVEakNDQXZhZ0F3SUJBZ0lVYXBTeUtPOFBqRS9xYmc2YTYwU2p1THhEOERzd0RRWUpLb1pJaHZjTkFRRUwKQlFBd2dZWXhDekFKQmdOVkJBWVRBa1pTTVJrd0Z3WURWUVFIRXhCRGJHVnliVzl1ZEMxR1pYSnlZVzVrTVJFdwpEd1lEVlFRS0V3aERhR0Z0Y0dsaGRERXFNQ2dHQTFVRUN4TWhWMlZpSUhObGNuWnBZMlVnYVc1MFpYSnVZV3dnCmFXNTBaWEp0WldScFlYUmxNUjB3R3dZRFZRUURFeFJYWldJZ2MyVnlkbWxqWlNCcGJuUmxjbTVoYkRBZUZ3MHkKTWpBek1UQXdPVEkwTURCYUZ3MHlNekF6TVRBd09USTBNREJhTUdneEN6QUpCZ05WQkFZVEFrWlNNUmt3RndZRApWUVFIRXhCRGJHVnliVzl1ZEMxR1pYSnlZVzVrTVJFd0R3WURWUVFLRXdoRGFHRnRjR2xoZERFZE1Cc0dBMVVFCkN4TVVUa0ZUSUhkbFlpQmpaWEowYVdacFkyRjBaWE14RERBS0JnTlZCQU1UQTI1aGN6Q0NBU0l3RFFZSktvWkkKaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFMRmJrY0dlY25MQXg1UGtVcTZyMC9DbzFYQ2ttdEdBcmZDMQpVRzRkWXo3VXdqeXVSSHVhQWdtZDRVVnZvYVZhZGl0VGdRSVpiUGtTWk9TQ1FrWGl0MUxCUzIxVXRGS1pHQ2VCCm43ajlucDJqMTJNNUYyUUw2b04zM05OQUdWT1NTbzZWTWVUbkcxcC85WGFnWkJJT3FZRXE4Vk5HQUFNV3ZFcVYKYzZxcC9FVzNBdXlnVXI5T0Z6MmRVNE5aSmwyUjJ0TEJ1eFdNNGFrTFVxUmswaXNQbW54WFpzMXRKSmdKaTB0aQp1eThWMnM4bUpzRjVjRW5iUW5lOFVLTi9RN1h5MU42ZTFuNjNBQ3kwMC92NUFRQ2Fsb21qd0NlT3A5MzIwM1llCkQxdVpzYWJWUFZFaE1sWEc1Z08vYmhHSVhaVmtLUG5vQ1hhNEtLc0h0TkNmckgvQkdOVUNBd0VBQWFPQmtEQ0IKalRBT0JnTlZIUThCQWY4RUJBTUNCYUF3RXdZRFZSMGxCQXd3Q2dZSUt3WUJCUVVIQXdFd0RBWURWUjBUQVFILwpCQUl3QURBZEJnTlZIUTRFRmdRVXNZR0xiY29wRE1mZnBQb0YwbzU3YktTeUlGMHdId1lEVlIwakJCZ3dGb0FVCk93MUc5M3M2Tk9BbU5va3lxRmI5UFpmbXFic3dHQVlEVlIwUkJCRXdENElIYm1GekxteGhib2NFd0tnQUZEQU4KQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBWlc5eHdMR2ZjRkQ0eXBXUHJWZzlPVlVqcHROMElKTnhxTjUybUpqTwpYVHExNkNQaHVUaHJvRkQ5RkwxTWFaditOY01FU3hxNmlaMHh0YmRwb25yYlNzaHhlVzBMU2JCRGU5TjViL3p5CmQ3VmoyeFdKMitUai9mM2gzY0hPemd4NXl1eVMrL05hOUpScE52N2FuQWxoUzdnYzRvSnR0NVplZHBjNllqSVgKQmlYY1lTaFREQXh1cHRKbVB5Q1lMQW5Bc2lPNlZtMGg5VWRtZytCVU1oZWZPRmJRN1dQZGx4N2czYTB4eFBuKwp1SG5BSGNtb3c3bUF2ME5Xbkl3Mm1BT3VlWmpZTUh4S3NzaDNNVlZDcktxYjd3QmFvUjQzMEFHcncvWGZBT0hTCjRtUENEa2U5WS84M21MSkJ4QlErY2kxbkp3c09UN1A1azh1THBZZjNvQk80bmc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tQkVHSU4gQ0VSVElGSUNBVEUtLS0tLQpNSUlFL0RDQ0F1U2dBd0lCQWdJVVJzMzdQdkVCRzNnd3JVZ3RqQk5CQTA0ajMrSXdEUVlKS29aSWh2Y05BUUVOCkJRQXdZREVMTUFrR0ExVUVCaE1DUmxJeEdUQVhCZ05WQkFjVEVFTnNaWEp0YjI1MExVWmxjbkpoYm1ReEVUQVAKQmdOVkJBb1RDRU5vWVcxd2FXRjBNUXd3Q2dZRFZRUUxFd05RUzBreEZUQVRCZ05WQkFNVERFTm9ZVzF3YVdGMApJRkJMU1RBZUZ3MHlNakF4TVRjeE1qUXpNREJhRncweU16QXhNVGN4TWpRek1EQmFNSUdHTVFzd0NRWURWUVFHCkV3SkdVakVaTUJjR0ExVUVCeE1RUTJ4bGNtMXZiblF0Um1WeWNtRnVaREVSTUE4R0ExVUVDaE1JUTJoaGJYQnAKWVhReEtqQW9CZ05WQkFzVElWZGxZaUJ6WlhKMmFXTmxJR2x1ZEdWeWJtRnNJR2x1ZEdWeWJXVmthV0YwWlRFZApNQnNHQTFVRUF4TVVWMlZpSUhObGNuWnBZMlVnYVc1MFpYSnVZV3d3Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBCkE0SUJEd0F3Z2dFS0FvSUJBUURTSVZtTjVoTzRTZm9Vcnp3TlFqb3BYYm1rby9jU2I1a0lzd2lidGZYMktZdVYKVVBpcDhQT1RrdFNROVQ5VmJlN1R5eVBwSk1WRzRjYzd2MVprVkRWeGkyZFNtU1BFZTNNU0FzRjRhSDJQalpYQQo1dy9xTmRPVG1ocWgvZm1GUWhhMmwzQnljVWtUMElORGdyZEY3NlRrY2ErTENiazFFaGJRRExqRlp5RkkxcjlUCkJGM2p6RHV0UTdTNFBKZlhsTHQybDR4ZUoybm0zUlBiVkFXYXhUQWhuMThhNElaZkJRaDNlSEZjZk9za1NnTWIKVHdBL1NHaVNPMDUwdTBKd3lTdTYrdXhQcGREM1pZZlVEVGJHOWMwZk1YMHdNOEloS2RJMjN5M1hBMGRuSkN2agpNbnNramswTDF2TXFrMUJuOEd6UCszQ0xoWXBkT1RNc05SWTRuNUE3QWdNQkFBR2pnWVl3Z1lNd0RnWURWUjBQCkFRSC9CQVFEQWdHbU1CMEdBMVVkSlFRV01CUUdDQ3NHQVFVRkJ3TUJCZ2dyQmdFRkJRY0RBakFTQmdOVkhSTUIKQWY4RUNEQUdBUUgvQWdFQU1CMEdBMVVkRGdRV0JCUTdEVWIzZXpvMDRDWTJpVEtvVnYwOWwrYXB1ekFmQmdOVgpIU01FR0RBV2dCUUhGZmtoN21jYUVMWnZLamhzdnAzYjNsQm90akFOQmdrcWhraUc5dzBCQVEwRkFBT0NBZ0VBCmNQMTZoT1cvNTNiUFNyZGJXY2tpL211SVpndklpbGRDV2JWb01nZWYrcXdxRlJqK3Z1bFRiNm9XOHlxc1hvRXQKcllwbUdyTTNyWWxaanFGV3d1SmZmVXd0bEJVVXdhTEQ2VEcrTFB1bkJaalBONWQxeEJMaEJqU3ZaS0FLanAzdwpONGtSdjFmMHdYSkJxR2pwQmt4bUg5NmdTZDdQUnU3cHR2aXlFWG1nQVZBbWIyblIvRDFVQVM3M083eDJ0OCtSCkdRenlCK3BEeFFjdkhvbWVaWis4M1UyRm5QUEVHbDlEMXI1VlFJOEx5a3NsczVCZDlXbVhDMk1zUVdMd2FhMWwKZm9FYlI4aXQ2djh1cWdzRkJjUGZ6cXMxUWVpWEVraWZiNGsrZ0tOUlkrN0RzN1JWdmlPWDFkelZucFl6eFVoMQpsM0t5VkVVeTdVUjkwemNJMlc4allBSndoRzk3bjhpT0grNUY1TTVwSDl6VHBEc1lQYXJiNzNZL09YaHBRdUJVCkMrREZuVlltdnNkMUkrbVYyOU5qWlRWandQSU9tdjhsbmpubzZmb1VrNlNsVEJaNEZleXU2dTFvVG9vOUE1NEwKd1JPY3lsSkZwTnkvWWhQQnphR1lLZ3J5bkl1RTRqZGN6U3FWTWNPZmI2Yy8yUE1NbDBRYTZKN2lFeXZ3ZHNMaQpJSTFCV2NMUDcyTGtFMkdLUHRLNTY3d29NM0hEakVjdDUvNDJDV05RQXNqTm1jd2NOZStTZk1NelA1SHBtNGs5CnR6RnhHa2dIQm10Q1g3ZUVzcEN6THZHcmZJUUYrZHJ1YnhLYStjU1JDemovWndhYktNTWlwRUtyYmhhM1kreDUKZ1BNbjcxNEVUUit6ZVdYS0pQWDIvK3RjV0ZLb29mcnVqZzgyZEpoeTR3ST0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQotLS0tLUJFR0lOIENFUlRJRklDQVRFLS0tLS0KTUlJRmtEQ0NBM2lnQXdJQkFnSVVUaGhhanFhVXQyRVYrZFp5amlYOEJlRjE0TUF3RFFZSktvWklodmNOQVFFTgpCUUF3WURFTE1Ba0dBMVVFQmhNQ1JsSXhHVEFYQmdOVkJBY1RFRU5zWlhKdGIyNTBMVVpsY25KaGJtUXhFVEFQCkJnTlZCQW9UQ0VOb1lXMXdhV0YwTVF3d0NnWURWUVFMRXdOUVMwa3hGVEFUQmdOVkJBTVRERU5vWVcxd2FXRjAKSUZCTFNUQWVGdzB5TWpBeE1UY3hNak0xTURCYUZ3MHlOekF4TVRZeE1qTTFNREJhTUdBeEN6QUpCZ05WQkFZVApBa1pTTVJrd0Z3WURWUVFIRXhCRGJHVnliVzl1ZEMxR1pYSnlZVzVrTVJFd0R3WURWUVFLRXdoRGFHRnRjR2xoCmRERU1NQW9HQTFVRUN4TURVRXRKTVJVd0V3WURWUVFERXd4RGFHRnRjR2xoZENCUVMwa3dnZ0lpTUEwR0NTcUcKU0liM0RRRUJBUVVBQTRJQ0R3QXdnZ0lLQW9JQ0FRRFRnZnk2TUoyMXg4aW1xWVpsSDl1VTRqWXJjVDJaUEdzTAo1djlhZmVuVG5rY0pCOHFSaTM3TkttakdZUXpITkhpS2tndUFocDdSTjhDYitJMlp5WW4zektKTTBYcnJQRjJqCkU4YmVYMlo1KzZmYUxIbDQwOVcwMUIzemZDTncvQTVvVmYrNXY3Rjl1SXMzYlJmeGtNWmNrNUNjNENNd0tIQloKTjVCR3VOSkFUa2htQmFVbGpLTUhKd1Y1QzlReUF0TXFFd3Y1a0dmM0d4d1FibFNQVWhtSExJZms1eWZTdjRjRwpxYjZ2OExEU1FQYmtzUFkzWXpGbjd1Z1lMMytFZTJCOXVBc281YlhNYkRzSlQ0UmxSMnIwZ3VqQnJQc3ZIc3RzCldUbWtpY093VHZ3VWp2eWx5TU8xRXNyRHVOdFVHa2pqcDhMbFBZbGJsTytEYmgzNURyY0ZISVJNeWdNRjJaV1cKdWEwUWoxSzB6Y0l6WUttdWpzekErRGNDMFpORG9XTGVRYU5KOG5INkpBbnhDaml3WUcxT2kvdzR3RElrUjI5MAp6STlTMWk3QkUyRkF4aFowZHYwU05aUWE2VWJNNGVNdkhwUm4rZ05vdkRiVzJGekx5SmVqbUhvZXN6bFZ0NDFpCm96ZVFUVnZMV29Lc3FDTXlIdUdqU3djSlNHVGp0ditlaERONGczb2x6OGdtL1JEN3hFcnp6dkFlb2pSbjc2ZW0KRmNGVjhoYzBHaWlQUldySzZBWloxQUd1SW9LendWYVZNVWpmM0liZkFadDlyU2pmZkZUVXpzeE9wZVhmRENaKwp2dEdaR01FU1FrSm9XeGRFSllXZ2JvZEtheU1aTUtkUnpRY3FUSzNFb2k1SzJ6NE85U0l4Y3I3KzVCRFlRYSttClc2dTRvR28xWXdJREFRQUJvMEl3UURBT0JnTlZIUThCQWY4RUJBTUNBUVl3RHdZRFZSMFRBUUgvQkFVd0F3RUIKL3pBZEJnTlZIUTRFRmdRVUJ4WDVJZTVuR2hDMmJ5bzRiTDZkMjk1UWFMWXdEUVlKS29aSWh2Y05BUUVOQlFBRApnZ0lCQUw3ck9RcE1vUHRJSFJCaFJZWTRiTlhhRlJqY1BPNkxnY3RHanFJV2RrVWc3SnhxVEgveXcrdFlRUEhoCm80VkhOVy9xNlYxV1FzWGtPcGNzNTFuVHFXNFhJb2d1dzQyUHRoTklsN2xGWmlOaE9hWHN2LzcyVldVOFlzR1kKU1BUSWU1ajhPMURTaWR4UElwTFJuUklmUXk4Q0VTclJ4N3dhbUNCVE9BUWMyOHJrZTdUOVFjbHJaV09qaG1sdQpBaFZ5OFUwclhTWDV5bXZtMmM5MGF6NXl4OCtYczlHcCtpNnVXVEk5cTM5UTFsTjM2ZFZUNW9pN3REcFM1OTMwCjJNeEVLZjhRY3ErSVdvVU9KWFpUOUZVc0MxQlNXelJYdGZBcCszYTU1bjJVdkJBQ3JiYUE2cE56YWNrSW12QlUKNW5HZ0pLV09LZEZIL3JvNnVXUmNTQ1FqWGZ5OXdPTEVHUHhwSjNERVhMMEtlc2pPT1l0SnhBaTl3VTY5Y2ozYwoyY1FmV1BoWHJSWlFlUVhJWGNlUXk0ZWhoajVuMVE1ZUlnSS8zcTVkM2tHek0zemhiN1krZ1dpTzJueC9ZM3M2Cld0dVNQOHlyOHhBOGhzcGwwMmhVQVU4eXFaK3ZSNitxUXFzd1htclJlaHpqUDd1Wk5NaFRERldlZmd5TkJ2a2QKUkxqVytsZ09rSkM2U0xibzFwa1FWUjNUSlgxL05xc0hJaUZrWWVzeDBybktRYTN5UkxKcjNQS0M0Zm93YmZtKwpURTNoZUQxNDcyaXYzYm9oWSthSllVTVhCbXhwMGRJTjg4b0EwNDUzOEZRMTVjMGRSa0xVQ1BTU0lyZ3plVi9qCm5YQXliOWoxRWZBTi9pMWltSHZ3OHplOG5NUS9HUy9aeFRqcHNrQXo5dFJ2YzBiaAotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    # prefix is the directory under which all Velero data should be stored within the bucket. Optional.
+    prefix:
+    # default indicates this location is the default backup storage location. Optional.
+    default: true
+    # Additional provider-specific configuration. See link above
+    # for details of required/optional fields for your provider.
+    config:
+     region: "eu-paris"
+     s3ForcePathStyle: true
+     s3Url: "https://nas.lan:9000"
+    #  kmsKeyId:
+    #  resourceGroup:
+    #  The ID of the subscription containing the storage account, if different from the cluster’s subscription. (Azure only)
+    #  subscriptionId:
+    #  storageAccount:
+    #  publicUrl:
+    #  Name of the GCP service account to use for this backup storage location. Specify the
+    #  service account here if you want to use workload identity instead of providing the key file.(GCP only)
+    #  serviceAccount:
+
+  # Parameters for the `default` VolumeSnapshotLocation. See
+  # https://velero.io/docs/v1.6/api-types/volumesnapshotlocation/
+  volumeSnapshotLocation:
+    # name is the name of the volume snapshot location where snapshots are being taken. Required.
+    name: csi-backup
+    # provider is the name for the volume snapshot provider. If omitted
+    # `configuration.provider` will be used instead.
+    provider: aws
+    # Additional provider-specific configuration. See link above
+    # for details of required/optional fields for your provider.
+    config:
+      region: "eu-paris"
+      # s3ForcePathStyle: true
+      # s3Url: "http://nas.lan:9000"
+  #    region:
+  #    apiTimeout:
+  #    resourceGroup:
+  #    The ID of the subscription where volume snapshots should be stored, if different from the cluster’s subscription. If specified, also requires `configuration.volumeSnapshotLocation.config.resourceGroup`to be set. (Azure only)
+  #    subscriptionId:
+  #    incremental:
+  #    snapshotLocation:
+  #    project:
+
+  # These are server-level settings passed as CLI flags to the `velero server` command. Velero
+  # uses default values if they're not passed in, so they only need to be explicitly specified
+  # here if using a non-default value. The `velero server` default values are shown in the
+  # comments below.
+  # --------------------
+  # `velero server` default: 1m
+  backupSyncPeriod:
+  # `velero server` default: 1h
+  resticTimeout:
+  # `velero server` default: namespaces,persistentvolumes,persistentvolumeclaims,secrets,configmaps,serviceaccounts,limitranges,pods
+  restoreResourcePriorities:
+  # `velero server` default: false
+  restoreOnlyMode:
+  # `velero server` default: 20.0
+  clientQPS:
+  # `velero server` default: 30
+  clientBurst:
+  # `velero server` default: empty
+  disableControllers:
+  #
+
+  # additional key/value pairs to be used as environment variables such as "AWS_CLUSTER_NAME: 'yourcluster.domain.tld'"
+  extraEnvVars: {}
+
+  # Comma separated list of velero feature flags. default: empty
+  # features: EnableCSI
+  features: EnableCSI
+
+  # Set log-level for Velero pod. Default: info. Other options: debug, warning, error, fatal, panic.
+  logLevel:
+
+  # Set log-format for Velero pod. Default: text. Other option: json.
+  logFormat: json
+
+  # Set true for backup all pod volumes without having to apply annotation on the pod when used restic Default: false. Other option: false.
+  defaultVolumesToRestic:
+
+  # How often 'restic prune' is run for restic repositories by default. Default: 168h. Optional.
+  defaultResticPruneFrequency:
+
+##
+## End of backup/snapshot location settings.
+##
+
+
+##
+## Settings for additional Velero resources.
+##
+
+rbac:
+  # Whether to create the Velero role and role binding to give all permissions to the namespace to Velero.
+  create: true
+  # Whether to create the cluster role binding to give administrator permissions to Velero
+  clusterAdministrator: true
+
+# Information about the Kubernetes service account Velero uses.
+serviceAccount:
+  server:
+    create: true
+    name:
+    annotations:
+    labels:
+
+# Info about the secret to be used by the Velero deployment, which
+# should contain credentials for the cloud provider IAM account you've
+# set up for Velero.
+credentials:
+  # Whether a secret should be used. Set to false if, for examples:
+  # - using kube2iam or kiam to provide AWS IAM credentials instead of providing the key file. (AWS only)
+  # - using workload identity instead of providing the key file. (GCP only)
+  useSecret: true
+  # Name of the secret to create if `useSecret` is true and `existingSecret` is empty
+  name:
+  # Name of a pre-existing secret (if any) in the Velero namespace
+  # that should be used to get IAM account credentials. Optional.
+  existingSecret: velero-cloud-auth
+  # Data to be stored in the Velero secret, if `useSecret` is true and `existingSecret` is empty.
+  # As of the current Velero release, Velero only uses one secret key/value at a time.
+  # The key must be named `cloud`, and the value corresponds to the entire content of your IAM credentials file.
+  # Note that the format will be different for different providers, please check their documentation.
+  # Here is a list of documentation for plugins maintained by the Velero team:
+  # [AWS] https://github.com/vmware-tanzu/velero-plugin-for-aws/blob/main/README.md
+  # [GCP] https://github.com/vmware-tanzu/velero-plugin-for-gcp/blob/main/README.md
+  # [Azure] https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure/blob/main/README.md
+  secretContents: {}
+  #  cloud: |
+  #    [default]
+  #    aws_access_key_id=NluwbbZZt1q3byi6FdS
+  #    aws_secret_access_key=8CRvd0tVP2fojUcbHEo
+  # additional key/value pairs to be used as environment variables such as "DIGITALOCEAN_TOKEN: <your-key>". Values will be stored in the secret.
+  extraEnvVars: {}
+  # Name of a pre-existing secret (if any) in the Velero namespace
+  # that will be used to load environment variables into velero and restic.
+  # Secret should be in format - https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+  extraSecretRef: ""
+
+# Whether to create backupstoragelocation crd, if false => do not create a default backup location
+backupsEnabled: true
+# Whether to create volumesnapshotlocation crd, if false => disable snapshot feature
+snapshotsEnabled: true
+
+# Whether to deploy the restic daemonset.
+deployRestic: false
+
+restic:
+  podVolumePath: /var/lib/kubelet/pods
+  privileged: false
+  # Pod priority class name to use for the Restic daemonset. Optional.
+  priorityClassName: ""
+  # Resource requests/limits to specify for the Restic daemonset deployment. Optional.
+  # https://velero.io/docs/v1.6/customize-installation/#customize-resource-requests-and-limits
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+
+  # Tolerations to use for the Restic daemonset. Optional.
+  tolerations: []
+
+  # Annotations to set for the Restic daemonset. Optional.
+  annotations: {}
+
+  # labels to set for the Restic daemonset. Optional.
+  labels: {}
+
+  # will map /scratch to emptyDir. Set to false and specify your own volume
+  # via extraVolumes and extraVolumeMounts that maps to /scratch
+  # if you don't want to use emptyDir.
+  useScratchEmptyDir: true
+
+  # Extra volumes for the Restic daemonset. Optional.
+  extraVolumes: []
+
+  # Extra volumeMounts for the Restic daemonset. Optional.
+  extraVolumeMounts: []
+
+  # Configure the dnsPolicy of the Restic daemonset
+  # See: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+  dnsPolicy: ClusterFirst
+
+  # SecurityContext to use for the Velero deployment. Optional.
+  # Set fsGroup for `AWS IAM Roles for Service Accounts`
+  # see more informations at: https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+  podSecurityContext:
+    runAsUser: 0
+    # fsGroup: 1337
+
+  # Container Level Security Context for the 'restic' container of the restic DaemonSet. Optional.
+  # See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  containerSecurityContext: {}
+
+  # Node selector to use for the Restic daemonset. Optional.
+  nodeSelector: {}
+
+# Backup schedules to create.
+# Eg:
+schedules:
+  cluster-backup:
+    disabled: false
+    schedule: "@every 168h"
+    useOwnerReferencesInBackup: false
+    template:
+      ttl: "240h"
+
+  vaultwarden-backup:
+    disabled: false
+    schedule: '@every 48h'
+    useOwnerReferencesInBackup: false
+    template:
+      hooks: {}
+      includedNamespaces:
+      - '*'
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/instance: vaultwarden
+      ttl: 168h0m0s
+
+  gitea-backup:
+    disabled: false
+    schedule: '@every 48h'
+    useOwnerReferencesInBackup: false
+    template:
+      hooks: {}
+      includedNamespaces:
+      - '*'
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/instance: gitea
+      ttl: 168h0m0s
+
+  harbor-backup:
+    disabled: false
+    schedule: '@every 48h'
+    useOwnerReferencesInBackup: false
+    template:
+      hooks: {}
+      includedNamespaces:
+      - '*'
+      labelSelector:
+        matchLabels:
+          release: harbor
+      ttl: 168h0m0s
+
+  nextcloud-backup:
+    disabled: false
+    schedule: '@every 48h'
+    useOwnerReferencesInBackup: false
+    template:
+      hooks: {}
+      includedNamespaces:
+      - '*'
+      labelSelector:
+        matchExpressions:
+          - {key: app.kubernetes.io/instance, operator: In, values: [mariadb-nextcloud, nextcloud]}
+      ttl: 168h0m0s
+
+  drone-backup:
+    disabled: false
+    schedule: '@every 168h'
+    useOwnerReferencesInBackup: false
+    template:
+      hooks: {}
+      includedNamespaces:
+      - '*'
+      labelSelector:
+        matchLabels:
+          release: drone
+      ttl: 168h0m0s
+
+  blocky-backup:
+    disabled: false
+    schedule: '@every 168h'
+    useOwnerReferencesInBackup: false
+    template:
+      hooks: {}
+      includedNamespaces:
+      - '*'
+      labelSelector:
+        matchExpressions:
+          - {key: app.kubernetes.io/instance, operator: In, values: [mariadb-blocky, blocky]}
+      ttl: 168h0m0s
+
+  heimdall-backup:
+    disabled: false
+    schedule: '@every 168h'
+    useOwnerReferencesInBackup: false
+    template:
+      hooks: {}
+      includedNamespaces:
+      - '*'
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/instance: heimdall
+      ttl: 730h0m0s
+
+  pki-backup:
+    disabled: false
+    schedule: '@every 168h'
+    useOwnerReferencesInBackup: false
+    template:
+      hooks: {}
+      includedNamespaces:
+      - '*'
+      labelSelector:
+        matchLabels:
+          release: pki
+      ttl: 730h0m0s
+# Velero ConfigMaps.
+# Eg:
+# configMaps:
+#   restic-restore-action-config:
+#     labels:
+#       velero.io/plugin-config: ""
+#       velero.io/restic: RestoreItemAction
+#     data:
+#       image: velero/velero-restic-restore-helper:v1.8.0
+configMaps: {}
+
+##
+## End of additional Velero resource settings.
+##
+

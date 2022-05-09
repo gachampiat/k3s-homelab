@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: drone
+  namespace: dev
+  labels:
+    release: drone
+data:
+  gitea_client_id: 4b8f0178-b892-49ee-8093-d437f60d8d03
+  gitea_server_url : https://git.champiat.lan
+  drone_server_host : drone.champiat.lan
+  drone_server_proto : https

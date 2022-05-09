@@ -1,0 +1,71 @@
+image:
+  tag: 23.0.0-apache
+
+nextcloud:
+  host: nextcloud.champiat.lan
+  extraSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+  ## Use an existing secret
+  existingSecret:
+    enabled: true
+    secretName: nextcloud-admin
+    usernameKey: username
+    passwordKey: password
+
+internalDatabase:
+  enabled: false
+
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 2800
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 2800
+
+externalDatabase:
+  enabled: true
+
+  ## Supported database engines: mysql or postgresql
+  type: mariadb
+
+  ## Database host
+  host: mariadb-nextcloud
+
+  ## Use a existing secret
+  existingSecret:
+    enabled: true
+    secretName: mariadb-nextcloud-auth-client
+    usernameKey: user
+    passwordKey: mariadb-password
+
+service:
+  type: ClusterIP
+  port: 8080
+  loadBalancerIP: nil
+  nodePort: nil
+
+persistence:
+  # Nextcloud Data (/var/www/html)
+  enabled: true
+  storageClass: freenas-nfs-csi
+  accessMode: ReadWriteMany
+  size: 300G
+
+  nextcloudData:
+    enabled: true
+    storageClass: freenas-nfs-csi
+    accessMode: ReadWriteMany
+    size: 700G
+
+
+ingress:
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  tls:
+    - secretName: nextcloud-tls
+      hosts:
+        - nextcloud.champiat.lan

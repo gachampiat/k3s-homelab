@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-config
+  namespace: dev
+  labels:
+    app.kubernetes.io/instance: gitea
+data:
+  server: |
+    DOMAIN=git.champiat.lan
+    ROOT_URL=http://git.champiat.lan
+    DISABLE_SSH=true
+  database: |
+    NAME=gitea

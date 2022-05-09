@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drone-deployment
+  namespace: dev
+  labels:
+    release: drone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drone
+  template:
+    metadata:
+      namespace: dev
+      labels:
+        app: drone
+        release: drone
+    spec:
+      containers:
+      - name: drone
+        image: drone/drone:2.8.0
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 80
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 443
+          name: https
+        env:
+          - name: DRONE_GITEA_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: drone
+                key: gitea_client_key
+          - name: DRONE_RPC_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: drone
+                key: drone_rpc
+          - name: DRONE_GITEA_SERVER
+            valueFrom:
+              configMapKeyRef:
+                name: drone
+                key: gitea_server_url
+          - name: DRONE_GITEA_CLIENT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: drone
+                key: gitea_client_id
+          - name: DRONE_SERVER_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: drone
+                key: drone_server_host
+          - name: DRONE_SERVER_PROTO
+            valueFrom:
+              configMapKeyRef:
+                name: drone
+                key: drone_server_proto
+          - name : DRONE_JSONNET_ENABLED
+            value : "true"
+          - name : DRONE_GIT_ALWAYS_AUTH
+            value : "true"
+        volumeMounts:
+        - name: nfs-pvc
+          mountPath: /data
+        - name: pki
+          mountPath: /etc/ssl/certs/web_bundles.crt
+          subPath: web_bundles.crt
+      volumes:
+      - name: nfs-pvc
+        persistentVolumeClaim:
+          claimName: drone
+      - name: pki
+        persistentVolumeClaim:
+          claimName: pki

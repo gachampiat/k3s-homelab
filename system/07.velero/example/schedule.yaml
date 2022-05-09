@@ -1,0 +1,18 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: blocky-backup
+  namespace: system
+spec:
+  schedule: '@every 24h'
+  useOwnerReferencesInBackup: false
+  template:
+    hooks: {}
+    includedNamespaces:
+    - '*'
+    labelSelector:
+      matchExpressions:
+        - {key: app.kubernetes.io/instance, operator: In, values: [mariadb-blocky, blocky]}
+    ttl: 168h0m0s
+
+

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drone-runner
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: drone-runner
+    release: drone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: drone-runner
+      release: drone
+  template:
+    metadata:
+      namespace: dev
+      labels:
+        app.kubernetes.io/name: drone-runner
+        release: drone
+    spec:
+      containers:
+      - name: drone-runner
+        image: drone/drone-runner-kube:1.0.0-rc.2
+        ports:
+        - containerPort: 3000
+        env:
+          - name: DRONE_RPC_HOST
+            value: drone
+          - name: DRONE_SERVER_PROTO
+            value: http
+          - name: DRONE_RPC_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: drone
+                key: drone_rpc
+          - name: DRONE_UI_USERNAME
+            valueFrom:
+              configMapKeyRef:
+                name: drone-runner
+                key: username
+          - name: DRONE_UI_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: drone-runner
+                key: password
+          - name: DRONE_RUNNER_VOLUMES
+            valueFrom:
+              configMapKeyRef:
+                name: drone-runner
+                key: volumes
+          - name: DRONE_SERVICE_ACCOUNT_DEFAULT
+            value: drone-deployment
+          - name: DRONE_NAMESPACE_DEFAULT
+            value: dev
+          - name: DRONE_FEATURE_FLAG_DISABLE_DELETE
+            value: "true"
+          
+
